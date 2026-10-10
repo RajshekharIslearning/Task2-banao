@@ -1,0 +1,57 @@
+Kestrel Returns - Model Training
+============================================================
+EXCLUDED COLUMNS & REASONS:
+- last_service_event_type: Leakage: captured after outcome (D-04)
+- pickup_scheduled_at: Leakage: filled only after return approved (D-05)
+- source: Zero variance after dedup (D-06)
+- delivery_pincode: Categorical with missing placeholder '000000', replaced with is_no_address flag (D-07)
+- delivery_note: Free text, replaced with has_note and note_mentions_call flags (D-08)
+- order_id: Identifier
+- customer_id: Identifier
+- sku: Identifier
+- order_placed_at: Used for split, time features extracted
+- returned: Target variable
+
+FEATURES KEPT (29 columns):
+discount_pct, qty, promised_delivery_days, customer_prior_orders, customer_prior_returns, prior_return_rate, customer_tenure_days, log_order_value, log_list_price, warranty_months, order_hour, order_weekday, is_no_address, has_note, note_mentions_call, is_gift_Y, shield_member_Y, pay_cod, pay_emi, pay_prepaid_upi, chan_app, chan_marketplace, chan_partner_outlet, fam_Air_Fryer, fam_Induction_Cooktop, fam_Mixer_Grinder, fam_Robot_Vacuum, fam_Room_Heater, fam_Water_Purifier
+============================================================
+
+Fold 1 (Oct-Dec 2025)
+Train rows: 4170, Test rows: 2082
+  COD Baseline -> AUC: 0.6018 | AP: 0.1391
+  Logistic Regression  -> AUC: 0.7649 | AP: 0.3370
+  HistGradientBoosting -> AUC: 0.6928 | AP: 0.2651
+
+Fold 2 (Jan-Mar 2026)
+Train rows: 6252, Test rows: 2126
+  COD Baseline -> AUC: 0.5970 | AP: 0.1481
+  Logistic Regression  -> AUC: 0.7733 | AP: 0.3895
+  HistGradientBoosting -> AUC: 0.7514 | AP: 0.3345
+
+Fold 3 (Apr-Jun 2026)
+Train rows: 8378, Test rows: 2126
+  COD Baseline -> AUC: 0.6258 | AP: 0.1594
+  Logistic Regression  -> AUC: 0.7879 | AP: 0.4187
+  HistGradientBoosting -> AUC: 0.7515 | AP: 0.3266
+
+============================================================
+CHOSEN MODEL: Logistic Regression
+REASON: HistGradientBoosting scored 0.0365 AUC LOWER than Logistic Regression. LR is simpler, easily explainable, and less prone to edge-case extrapolation.
+
+CALIBRATION (Fold 3) - Quintiles
+          mean_pred  actual_rate  count
+quintile                               
+0          0.019513     0.023474    426
+1          0.041995     0.035294    425
+2          0.069941     0.075294    425
+3          0.119387     0.120000    425
+4          0.316351     0.322353    425
+
+============================================================
+LEAKAGE EXPERIMENT (Fold 3)
+Honest Model (Logistic Regression) -> AUC: 0.7879 | Accuracy: 0.8960
+Leaky Model  (Logistic Regression) -> AUC: 0.9989 | Accuracy: 0.9929
+
+Model saved to model/model.joblib
+Metrics saved to evidence/metrics.json
+============================================================

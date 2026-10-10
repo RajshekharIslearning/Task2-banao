@@ -1,0 +1,5 @@
+Running Assertions on predictions.csv...
+All assertions passed!
+Row count: 2096
+IDs are unique and match sample_submission.
+Scores are finite.

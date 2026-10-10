@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kestrel Returns - Pre-Dispatch Risk</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #0056b3;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #004494;
+        }
+        .result {
+            display: none;
+            border-top: 2px solid #eee;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+        .band-HIGH { color: #dc3545; font-weight: bold; }
+        .band-MEDIUM { color: #ffc107; font-weight: bold; }
+        .band-LOW { color: #28a745; font-weight: bold; }
+        
+        .action-hold { background-color: #dc3545; color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold;}
+        .action-call { background-color: #ffc107; color: black; padding: 5px 10px; border-radius: 4px; font-weight: bold;}
+        .action-ship { background-color: #28a745; color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold;}
+        
+        .shield-badge {
+            background-color: #17a2b8;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            vertical-align: middle;
+            margin-left: 10px;
+            display: none;
+        }
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Kestrel Home - Order Risk Scorer</h2>
+        </div>
+        
+        <div class="card">
+            <h3>Score an Order</h3>
+            <p>Select a sample order to populate the form:</p>
+            <div class="form-group">
+                <select id="samplePicker" onchange="loadSample()">
+                    <option value="">-- Choose Sample --</option>
+                    <option value="high">High Risk (COD, New Customer)</option>
+                    <option value="low">Low Risk (Prepaid, Long Tenure)</option>
+                    <option value="shield">Shield Customer (High Value)</option>
+                </select>
+            </div>
+            
+            <form id="orderForm">
+                <div class="form-group">
+                    <label>Order ID</label>
+                    <input type="text" id="order_id" required>
+                </div>
+                <div class="form-group">
+                    <label>Customer ID</label>
+                    <input type="text" id="customer_id" required>
+                </div>
+                <div class="form-group">
+                    <label>SKU</label>
+                    <input type="text" id="sku" required>
+                </div>
+                <div class="form-group">
+                    <label>Order Placed At</label>
+                    <input type="text" id="order_placed_at" value="2026-07-15 10:00:00" required>
+                </div>
+                <div class="form-group">
+                    <label>Payment Mode</label>
+                    <select id="payment_mode">
+                        <option value="cod">Cash on Delivery (cod)</option>
+                        <option value="prepaid_upi">UPI (prepaid_upi)</option>
+                        <option value="prepaid_card">Card (prepaid_card)</option>
+                        <option value="emi">EMI (emi)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Sales Channel</label>
+                    <select id="sales_channel">
+                        <option value="web">Web (web)</option>
+                        <option value="app">App (app)</option>
+                        <option value="marketplace">Marketplace</option>
+                        <option value="partner_outlet">Partner Outlet</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Discount %</label>
+                    <input type="number" step="0.01" id="discount_pct" value="0.0">
+                </div>
+                <div class="form-group">
+                    <label>Qty</label>
+                    <input type="number" id="qty" value="1">
+                </div>
+                <div class="form-group">
+                    <label>Order Value (INR)</label>
+                    <input type="number" id="order_value_inr" value="4500">
+                </div>
+                <div class="form-group">
+                    <label>Promised Delivery Days</label>
+                    <input type="number" id="promised_delivery_days" value="3">
+                </div>
+                <div class="form-group">
+                    <label>Delivery Pincode</label>
+                    <input type="text" id="delivery_pincode" value="411001">
+                </div>
+                <div class="form-group">
+                    <label>Delivery Note</label>
+                    <input type="text" id="delivery_note" placeholder="Optional">
+                </div>
+                <div class="form-group">
+                    <label>Is Gift?</label>
+                    <select id="is_gift">
+                        <option value="N">No</option>
+                        <option value="Y">Yes</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Prior Orders</label>
+                    <input type="number" id="customer_prior_orders" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Prior Returns</label>
+                    <input type="number" id="customer_prior_returns" value="0">
+                </div>
+                
+                <button type="submit" id="submitBtn">Evaluate Risk</button>
+            </form>
+            
+            <div id="errorBox" class="error"></div>
+            
+            <div id="resultBox" class="result">
+                <h3>Evaluation Result</h3>
+                <p><strong>Risk Score:</strong> <span id="resScore"></span>%</p>
+                <p><strong>Risk Band:</strong> <span id="resBand"></span></p>
+                <p>
+                    <strong>Recommended Action:</strong> 
+                    <span id="resAction"></span>
+                    <span id="shieldBadge" class="shield-badge">★ SHIELD MEMBER</span>
+                </p>
+                <p><strong>Expected Saving (INR):</strong> ₹<span id="resSaving"></span></p>
+                
+                <h4>Reasons for Risk:</h4>
+                <ul id="resReasons"></ul>
+                
+                <div id="warningsBox" style="color: #856404; background: #fff3cd; padding: 10px; margin-top: 15px; display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let samples = {};
+
+        // Fetch samples on load
+        window.addEventListener("DOMContentLoaded", async () => {
+            try {
+                const res = await fetch("/samples");
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    document.getElementById("errorBox").innerText = "Info: " + (errorData.detail || "Could not load samples. You can still enter data manually.");
+                    document.getElementById("errorBox").style.display = "block";
+                    return;
+                }
+                samples = await res.json();
+            } catch (err) {
+                document.getElementById("errorBox").innerText = "Info: Could not load samples (" + err.message + "). Manual entry required.";
+                document.getElementById("errorBox").style.display = "block";
+            }
+        });
+
+        function loadSample() {
+            const choice = document.getElementById("samplePicker").value;
+            if (!choice || !samples[choice]) return;
+            const data = samples[choice];
+            for (const key in data) {
+                const el = document.getElementById(key);
+                if (el && data[key] !== null) {
+                    el.value = data[key];
+                } else if (el) {
+                    el.value = "";
+                }
+            }
+        }
+
+        document.getElementById("orderForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("submitBtn");
+            const errBox = document.getElementById("errorBox");
+            const resBox = document.getElementById("resultBox");
+            
+            btn.disabled = true;
+            btn.innerText = "Evaluating...";
+            errBox.style.display = "none";
+            resBox.style.display = "none";
+            
+            const payload = {
+                order_id: document.getElementById("order_id").value,
+                customer_id: document.getElementById("customer_id").value,
+                sku: document.getElementById("sku").value,
+                order_placed_at: document.getElementById("order_placed_at").value,
+                payment_mode: document.getElementById("payment_mode").value,
+                sales_channel: document.getElementById("sales_channel").value,
+                discount_pct: parseFloat(document.getElementById("discount_pct").value),
+                qty: parseInt(document.getElementById("qty").value),
+                order_value_inr: parseFloat(document.getElementById("order_value_inr").value),
+                promised_delivery_days: parseInt(document.getElementById("promised_delivery_days").value),
+                delivery_pincode: document.getElementById("delivery_pincode").value,
+                delivery_note: document.getElementById("delivery_note").value || null,
+                is_gift: document.getElementById("is_gift").value,
+                customer_prior_orders: parseInt(document.getElementById("customer_prior_orders").value),
+                customer_prior_returns: parseInt(document.getElementById("customer_prior_returns").value)
+            };
+
+            try {
+                const response = await fetch("/predict", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || "Unknown API Error");
+                }
+                
+                // Display results
+                document.getElementById("resScore").innerText = (data.score * 100).toFixed(1);
+                
+                const bandEl = document.getElementById("resBand");
+                bandEl.innerText = data.risk_band;
+                bandEl.className = "band-" + data.risk_band;
+                
+                const actEl = document.getElementById("resAction");
+                actEl.innerText = data.recommended_action.toUpperCase();
+                actEl.className = "action-" + data.recommended_action;
+                
+                document.getElementById("resSaving").innerText = data.expected_saving_inr;
+                
+                const shieldBadge = document.getElementById("shieldBadge");
+                shieldBadge.style.display = data.is_shield ? "inline-block" : "none";
+                
+                const ul = document.getElementById("resReasons");
+                ul.innerHTML = "";
+                data.reasons.forEach(r => {
+                    const li = document.createElement("li");
+                    li.innerText = r;
+                    ul.appendChild(li);
+                });
+                
+                const warnBox = document.getElementById("warningsBox");
+                if (data.warnings && data.warnings.length > 0) {
+                    warnBox.style.display = "block";
+                    warnBox.innerText = data.warnings.join("\n");
+                } else {
+                    warnBox.style.display = "none";
+                }
+                
+                resBox.style.display = "block";
+            } catch (err) {
+                errBox.innerText = "Error: " + err.message;
+                errBox.style.display = "block";
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Evaluate Risk";
+            }
+        });
+    </script>
+</body>
+</html>

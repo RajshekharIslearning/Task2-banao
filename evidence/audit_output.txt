@@ -1,0 +1,249 @@
+======================================================================
+SECTION 1: SHAPES AND DATE RANGES
+======================================================================
+  train rows (raw)   : 11155
+  train unique IDs   : 10504
+  test rows          : 2096
+  customers rows     : 9000, unique: 9000
+  products rows      : 21
+  sample_submission  : 2096 rows, cols=['order_id', 'score']
+  train date range   : 2025-04-01 to 2026-06-30
+  test  date range   : 2026-07-01 to 2026-09-30
+  [PASS] test row count matches sample_submission  => 2096 vs 2096
+  [PASS] test order_ids match sample_submission
+  [PASS] all train SKUs in products.csv
+  [PASS] all test  SKUs in products.csv
+  [PASS] all train customer_ids in customers.csv
+  [PASS] all test  customer_ids in customers.csv
+
+======================================================================
+SECTION 2: MISSING VALUES
+======================================================================
+  Train missing (raw, key cols):
+    (none in key cols)
+  delivery_note non-null: train=8403/11155, test=1558/2096
+  pincode '000000' (placeholder): train=889 (8.0%), test=176 (8.4%)
+  [PASS] no NaN in core feature columns (train)
+
+======================================================================
+SECTION 3: DUPLICATE PROOF
+======================================================================
+  Extra rows with duplicate order_id: 651
+  Source distribution in duplicate rows: {'partner_feed': 651, 'crm': 651}
+  Columns where pairs differ (besides source): NONE
+  => Confirmed: duplicate pairs are identical in all columns except 'source'.
+  Decision: keep the 'crm' row (authoritative system per policy para 9); drop 'partner_feed' duplicate.
+  [PASS] all duplicate pairs identical except source column  => confirmed identical
+
+======================================================================
+SECTION 4: RETURN RATES
+======================================================================
+  By month:
+         count  sum  rate_pct
+month                        
+2025-04    661   99      15.0
+2025-05    674   81      12.0
+2025-06    678   64       9.4
+2025-07    736   87      11.8
+2025-08    714   92      12.9
+2025-09    707   60       8.5
+2025-10    700   81      11.6
+2025-11    698   74      10.6
+2025-12    684   70      10.2
+2026-01    719   81      11.3
+2026-02    664   85      12.8
+2026-03    743   81      10.9
+2026-04    705   85      12.1
+2026-05    722   83      11.5
+2026-06    699   77      11.0
+
+  By payment_mode:
+                  rate  count
+payment_mode                 
+cod           0.188135   3152
+emi           0.090767   1278
+prepaid_card  0.088249   2153
+prepaid_upi   0.076766   3921
+
+  By sales_channel:
+                    rate  count
+sales_channel                  
+marketplace     0.135587   2869
+web             0.111714   2766
+app             0.107482   3582
+partner_outlet  0.090909   1287
+
+  By product family:
+                       rate  count
+family                            
+Robot Vacuum       0.194981   1554
+Water Purifier     0.148174   1451
+Air Fryer          0.120053   1516
+Room Heater        0.116721   1525
+Induction Cooktop  0.082656   1476
+Mixer Grinder      0.067540   1451
+Ceiling Fan        0.066623   1531
+
+  By Shield membership:
+                   rate  count
+shield_member                 
+N              0.093800   8177
+Y              0.186076   2327
+  Shield: 22.2% of orders, 36.1% of returns
+  Note: Shield is over-represented in returns, not a majority.
+
+  By is_gift:
+             rate  count
+is_gift                 
+Y        0.165289    726
+N        0.110452   9778
+
+  By discount band (%):
+                   rate  count
+discount_band                 
+0              0.113208     53
+1-5            0.090140   3073
+6-10           0.112974   3399
+11-15          0.114697   2014
+15+            0.153690   1965
+
+  By promised delivery days band:
+               rate  count
+days_band                 
+1-3        0.076087   2300
+4-5        0.095793   4207
+6-7        0.143793   2900
+8+         0.186873   1097
+
+  By prior returns band:
+                    rate  count
+prior_ret_band                 
+0               0.090580   9119
+1               0.199422   1038
+2               0.408072    223
+3+              0.612903    124
+
+======================================================================
+SECTION 5: LEAKAGE PROOF
+======================================================================
+  Return rate by last_service_event_type (train, deduped):
+                         count  rate_pct
+last_service_event_type                 
+REVERSE_PICKUP             750     100.0
+TECH_VISIT                 447      38.5
+NONE                      6536       4.3
+DEMO_DONE                 1417       0.0
+INSTALL_DONE              1354       0.0
+
+  pickup_scheduled_at fill rate by returned (train, deduped):
+returned
+0    0.010856
+1    0.941667
+
+  Event types in train vs test:
+    Train only: {'INSTALL_DONE', 'TECH_VISIT', 'REVERSE_PICKUP', 'DEMO_DONE'}
+    Test only : {'INSTALL_BOOKED'}
+    Both      : {'NONE'}
+
+  INSTALL_BOOKED in test: 543 rows (never in train)
+  pickup_scheduled_at in test: 0 non-null (all null)
+  [PASS] REVERSE_PICKUP always returned=1
+  [PASS] DEMO_DONE / INSTALL_DONE always returned=0
+  [PASS] pickup_scheduled_at fill rate in returns > 90%
+  [PASS] pickup_scheduled_at fill rate in non-returns < 2%
+  [PASS] test has zero pickup_scheduled_at
+  [PASS] test has INSTALL_BOOKED (train has none)
+
+======================================================================
+SECTION 6: ORDER VALUE RATIO BY MONTH (stored / expected)
+======================================================================
+         median   mean  count
+month                        
+2025-04     1.0    1.0    661
+2025-05     1.0    1.0    674
+2025-06     1.0    1.0    678
+2025-07     1.0    1.0    736
+2025-08     1.0    1.0    714
+2025-09     1.0    1.0    707
+2025-10   100.0  100.0    700
+2025-11     1.0    1.0    698
+2025-12     1.0    1.0    684
+2026-01     1.0    1.0    719
+2026-02     1.0    1.0    664
+2026-03     1.0    1.0    743
+2026-04     1.0    1.0    705
+2026-05     1.0    1.0    722
+2026-06     1.0    1.0    699
+  [PASS] Oct 2025 ratio is 100x other months  => Oct median=100.0, other median=1.0000
+
+======================================================================
+SECTION 7: TIMEZONE NOTE vs COLUMNS WE USE
+======================================================================
+  Rows pre-Oct 2025 in train (Zoho era): 4418
+  Policy para 9: Zoho resolution events stored in UTC, not converted during migration.
+  Columns affected: last_service_event_type and pickup_scheduled_at (event timestamps).
+  Decision: both are excluded from the model as leaky. Timezone issue is therefore moot for modelling.
+  order_placed_at is an order timestamp (not a service event), should be IST. Used only for time-split, not as a feature.
+
+======================================================================
+SECTION 8: EMAIL THREAD CLAIMS - SUPPORTED OR CONTRADICTED
+======================================================================
+  Claim   : Ritu: each return costs ~Rs 600
+  Verdict : CONTRADICTED
+  Evidence: ops-policy.txt para 4 states Rs 1,150 (Finance). Farhan confirms this in the same thread.
+
+  Claim   : Ritu: 95%+ accuracy target
+  Verdict : CONTRADICTED (misleading bar)
+  Evidence: Predicting 'never return' gives 88.6%. 95% is achievable without a model. Not a useful target.
+
+  Claim   : Tanmay: partner-outlet orders appear twice (source column)
+  Verdict : SUPPORTED
+  Evidence: 651 extra rows; each pair has one crm and one partner_feed row, identical except source.
+
+  Claim   : Tanmay: October festive orders went through new payment gateway, values unchecked
+  Verdict : SUPPORTED
+  Evidence: Oct 2025 stored/expected ratio = 100.0 exactly. Every other month = 1.0 exactly.
+
+  Claim   : Tanmay: walk-in orders with no address get default pincode
+  Verdict : SUPPORTED
+  Evidence: 8.0% of train rows have pincode '000000'; confirmed placeholder per README.
+
+  Claim   : Tanmay: service and pickup columns pulled from service system as of export day
+  Verdict : SUPPORTED - and this is why they are leaky
+  Evidence: REVERSE_PICKUP always returned=1 (750/750). Pickup fill rate 94% in returns vs 1.1% in non-returns.
+
+  Claim   : Farhan: return cost is Rs 1,150 all-in, not 600
+  Verdict : SUPPORTED
+  Evidence: ops-policy.txt para 4 matches exactly.
+
+  Claim   : Farhan: held orders not free, people cancel
+  Verdict : SUPPORTED
+  Evidence: ops-policy.txt para 7: holds >24h lead to ~12% cancellations.
+
+  Claim   : Meenal: most returns are Shield customers
+  Verdict : PARTIALLY SUPPORTED (over-represented, not a majority)
+  Evidence: Shield is 22.2% of orders and 36.1% of returns. 36% is a minority; 'most' overstates it.
+
+  Claim   : Meenal: confirmation calls seemed to work
+  Verdict : SUPPORTED by policy
+  Evidence: ops-policy.txt para 7: pilot prevented ~35% of returns on called orders.
+
+  Claim   : Meenal: Shield customers are highest-LTV segment
+  Verdict : SUPPORTED by policy
+  Evidence: ops-policy.txt para 6: Shield members have 'highest lifetime value of any segment'.
+
+======================================================================
+SECTION 9: WHAT THIS MEANS FOR THE MODEL
+======================================================================
+  1. Exclude last_service_event_type and pickup_scheduled_at entirely; they carry the outcome, not pre-dispatch information.
+  2. Deduplicate on order_id keeping the crm row before any training or cross-validation; otherwise folds see the same order twice.
+  3. Divide October 2025 order_value_inr by 100 before using it as a feature; every other month is correct as stored.
+  4. Treat pincode '000000' as missing; do not use it as a real location signal.
+  5. Validate on Apr-Jun 2026 (held-out, time-ordered); never use random splits on this dataset.
+  6. COD (18.8% return rate) vs prepaid-UPI (7.7%) is the strongest single binary signal; prior returns is the strongest numeric signal (corr=0.24).
+  7. Shield members return at 18.6% vs 9.4% for non-Shield, but they are 22% of orders and highest-LTV; the model must score them honestly but the action logic must never auto-hold them.
+  8. INSTALL_BOOKED appears in 543 test rows and zero train rows; do not use last_service_event_type as a feature even after removing leaky values, because its distribution shifts between train and test.
+
+======================================================================
+CHECKS: 15 passed, 0 failed
+======================================================================

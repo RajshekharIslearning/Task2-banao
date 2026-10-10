@@ -1,0 +1,14 @@
+Call Policies:
+                            Policy  flagged_orders  returns_caught  false_alarms  missed_returns  precision    recall  accuracy  net_rupees
+0                       Do nothing               0            0.00             0          241.00   0.000000  0.000000  0.885402         0.0
+1                    Call everyone            2103           84.35          1862          156.65   0.040109  0.350000  0.114598      2367.5
+2  Call above break-even (> 0.112)             649           57.05           486          183.95   0.087904  0.236722  0.731812     36402.5
+3                     Call top 10%             211           31.15           122          209.85   0.147630  0.129253  0.869710     26327.5
+4                     Call top 20%             421           46.55           288          194.45   0.110570  0.193154  0.811698     34587.5
+5                     Call top 30%             631           56.35           470          184.65   0.089303  0.233817  0.738469     36407.5
+
+Hold Policies:
+         Policy  Margin 0  Margin 300  Margin 600  Margin 1000  Margin 1500
+0  Hold top 10%   12282.0      4686.0     -2910.0     -13038.0     -25698.0
+1  Hold top 20%   18354.0      3198.0    -11958.0     -32166.0     -57426.0
+2  Hold top 30%   22218.0      -498.0    -23214.0     -53502.0     -91362.0

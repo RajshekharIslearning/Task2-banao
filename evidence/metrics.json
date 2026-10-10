@@ -1,0 +1,7 @@
+{
+  "chosen_model": "Logistic Regression",
+  "fold3_auc": 0.7879395458342827,
+  "fold3_ap": 0.41874004091810496,
+  "leaky_auc": 0.9989128665820395,
+  "leaky_accuracy": 0.9929444967074318
+}
