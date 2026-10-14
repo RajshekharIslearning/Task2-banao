@@ -118,6 +118,13 @@
                     <label>Customer ID</label>
                     <input type="text" id="customer_id" required>
                 </div>
+                <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" id="shield_member" style="width:auto;margin:0;">
+                    <label for="shield_member" style="margin:0;font-weight:normal;"
+                           title="Tick if this customer is a Shield member and their ID is not in the reference data">
+                        ★ Shield member? <small style="color:#6c757d;">(auto-filled from CSV when customer is found; tick manually if unknown customer)</small>
+                    </label>
+                </div>
                 <div class="form-group">
                     <label>SKU</label>
                     <input type="text" id="sku" required>
@@ -154,7 +161,7 @@
                 </div>
                 <div class="form-group">
                     <label>Order Value (INR)</label>
-                    <input type="number" id="order_value_inr" value="4500">
+                    <input type="number" step="0.01" id="order_value_inr" value="4500">
                 </div>
                 <div class="form-group">
                     <label>Promised Delivery Days</label>
@@ -232,15 +239,33 @@
             const choice = document.getElementById("samplePicker").value;
             if (!choice || !samples[choice]) return;
             const data = samples[choice];
+
+            // Always reset the Shield checkbox first
+            document.getElementById("shield_member").checked = false;
+
             for (const key in data) {
+                // shield_member drives the checkbox, not a text input
+                if (key === "shield_member") {
+                    document.getElementById("shield_member").checked = (data[key] === "Y" || data[key] === true);
+                    continue;
+                }
                 const el = document.getElementById(key);
                 if (el && data[key] !== null) {
-                    el.value = data[key];
+                    // Always store the real value so the payload can use it
+                    el.dataset.real = data[key];
+                    // Mask sensitive fields in the visible input
+                    if (key === "customer_id" || key === "delivery_pincode") {
+                        const str = String(data[key]);
+                        el.value = "*".repeat(Math.max(0, str.length - 4)) + str.slice(-4);
+                    } else {
+                        el.value = data[key];
+                    }
                 } else if (el) {
                     el.value = "";
                 }
             }
         }
+
 
         document.getElementById("orderForm").addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -255,7 +280,7 @@
             
             const payload = {
                 order_id: document.getElementById("order_id").value,
-                customer_id: document.getElementById("customer_id").value,
+                customer_id: document.getElementById("customer_id").dataset.real || document.getElementById("customer_id").value,
                 sku: document.getElementById("sku").value,
                 order_placed_at: document.getElementById("order_placed_at").value,
                 payment_mode: document.getElementById("payment_mode").value,
@@ -264,11 +289,12 @@
                 qty: parseInt(document.getElementById("qty").value),
                 order_value_inr: parseFloat(document.getElementById("order_value_inr").value),
                 promised_delivery_days: parseInt(document.getElementById("promised_delivery_days").value),
-                delivery_pincode: document.getElementById("delivery_pincode").value,
+                delivery_pincode: document.getElementById("delivery_pincode").dataset.real || document.getElementById("delivery_pincode").value,
                 delivery_note: document.getElementById("delivery_note").value || null,
                 is_gift: document.getElementById("is_gift").value,
                 customer_prior_orders: parseInt(document.getElementById("customer_prior_orders").value),
-                customer_prior_returns: parseInt(document.getElementById("customer_prior_returns").value)
+                customer_prior_returns: parseInt(document.getElementById("customer_prior_returns").value),
+                shield_override: document.getElementById("shield_member").checked
             };
 
             try {

@@ -65,6 +65,7 @@ class OrderRequest(BaseModel):
     is_gift: str
     customer_prior_orders: int
     customer_prior_returns: int
+    shield_override: Optional[bool] = None   # manual override when customer not in CSV
     last_service_event_type: Optional[str] = None
     pickup_scheduled_at: Optional[str] = None
 
@@ -151,10 +152,17 @@ def predict_risk(order: OrderRequest):
     if df_customers is not None:
         cust_row = df_customers[df_customers["customer_id"] == cust_id]
         if cust_row.empty:
-            warnings_list.append("customer not found; history assumed empty, risk may be understated")
+            # Customer not in reference data — fall back to manual checkbox if provided
+            if order.shield_override:
+                is_shield = True
+                warnings_list.append("customer not found in CSV; Shield status taken from manual override checkbox.")
+            else:
+                warnings_list.append("customer not found; history assumed empty, risk may be understated")
         else:
             is_shield = (cust_row.iloc[0]["shield_member"] == "Y")
     else:
+        if order.shield_override:
+            is_shield = True
         warnings_list.append("customer not found; history assumed empty, risk may be understated")
     
     if df_products is not None:
